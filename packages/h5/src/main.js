@@ -66,7 +66,7 @@ $('#startBtn').addEventListener('click', () => {
 
 const riverEl = $('#river');
 
-function buildRiver() {
+function buildRiver(origin) {
   riverEl.innerHTML = '';
   const { river } = session.getState();
   river.forEach((_, i) => {
@@ -74,9 +74,29 @@ function buildRiver() {
     card.type = 'button';
     card.className = 'mini-card';
     card.dataset.idx = String(i);
-    card.style.animationDelay = `${Math.min(i * 8, 600)}ms`;
     card.innerHTML = '<span class="mini-back"><span class="back-emblem">☾</span></span>';
     riverEl.appendChild(card);
+  });
+  if (origin) dealFrom(origin);
+}
+
+function dealFrom(origin) {
+  [...riverEl.children].forEach((el, i) => {
+    const r = el.getBoundingClientRect();
+    const dx = origin.x - (r.left + r.width / 2);
+    const dy = origin.y - (r.top + r.height / 2);
+    el.animate(
+      [
+        { transform: `translate(${dx}px, ${dy}px) scale(0.55)`, opacity: 0.2 },
+        { transform: 'none', opacity: 1 },
+      ],
+      {
+        duration: 420,
+        delay: Math.min(i * 14, 700),
+        easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
+        fill: 'backwards',
+      },
+    );
   });
 }
 
@@ -171,10 +191,19 @@ function render(state) {
   $('#startBtn').disabled = state.phase !== 'idle' || !question.trim();
 
   showScreen(screens[state.phase]);
+
+  let dealOrigin = null;
+  if (state.phase === 'picking' && riverEl.children.length === 0) {
+    const stage = $('#shuffleStage');
+    if (getComputedStyle(stage).display !== 'none') {
+      const r = stage.querySelector('.shuffle-deck').getBoundingClientRect();
+      dealOrigin = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+  }
   $('#screen-draw').classList.toggle('is-shuffling', state.phase === 'shuffling');
 
   if (state.phase === 'shuffling' || state.phase === 'picking') {
-    if (state.phase === 'picking' && riverEl.children.length === 0) buildRiver();
+    if (state.phase === 'picking' && riverEl.children.length === 0) buildRiver(dealOrigin);
     $('#pickCount').textContent = String(state.picks.length);
     const order = new Map(state.picks.map((p, i) => [p.riverIndex, i + 1]));
     riverEl.querySelectorAll('.mini-card').forEach(el => {

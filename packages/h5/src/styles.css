@@ -228,13 +228,14 @@ textarea::placeholder { color: rgba(182, 174, 203, 0.55); }
   scroll-snap-align: center;
   padding: 0;
   perspective: 600px;
-  animation: dealIn 0.45s ease both;
   transition: transform 0.25s;
 }
 @keyframes dealIn {
   from { opacity: 0; transform: translateY(24px) scale(0.9); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+#screen-draw:not(.is-shuffling) .pick-progress { animation: dealIn 0.4s ease 0.5s both; }
+#screen-draw:not(.is-shuffling) .tray { animation: dealIn 0.4s ease 0.42s both; }
 .mini-back {
   display: block;
   width: 100%;
