@@ -1,0 +1,13 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#0b0820",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "塔罗占卜",
+    "backgroundColor": "#0b0820",
+    "backgroundTextStyle": "light"
+  },
+  "sitemapLocation": "sitemap.json"
+}

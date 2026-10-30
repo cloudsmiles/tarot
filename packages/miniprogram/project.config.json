@@ -1,0 +1,18 @@
+{
+  "description": "塔罗双端原型 · 微信小程序端",
+  "miniprogramRoot": "./",
+  "projectname": "tarot-miniprogram",
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "libVersion": "latest",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": true,
+    "postcss": true,
+    "minified": true
+  },
+  "packOptions": {
+    "ignore": []
+  }
+}

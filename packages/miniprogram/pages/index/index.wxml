@@ -1,0 +1,122 @@
+<!-- 问卜 -->
+<view class="screen" wx:if="{{phase === 'idle'}}">
+  <view class="brand">
+    <view class="brand-mark">☾</view>
+    <view class="brand-title">静心 · 问卜</view>
+    <view class="brand-sub">深呼吸，在心中具体地描述你的问题</view>
+  </view>
+
+  <view class="ask-card">
+    <view class="field-label">选择一个方向</view>
+    <view class="chips">
+      <button
+        wx:for="{{presets}}"
+        wx:key="*this"
+        class="chip {{question === item ? 'is-sel' : ''}}"
+        data-q="{{item}}"
+        bindtap="onPreset"
+      >{{chipLabels[index]}}</button>
+    </view>
+
+    <view class="field-label" style="margin-top:40rpx">或输入你的问题</view>
+    <textarea
+      class="question-input"
+      value="{{question}}"
+      bindinput="onQuestionInput"
+      maxlength="80"
+      placeholder="例如：我该接受这份新工作吗？"
+      placeholder-class="ph"
+      auto-height
+    />
+
+    <view class="spread-info">
+      <text>牌阵：三张牌</text>
+      <text class="dot-sep">◆</text>
+      <text>过去 · 现在 · 未来</text>
+    </view>
+
+    <button class="btn-primary" bindtap="onStart" disabled="{{question.length === 0}}">开始洗牌</button>
+  </view>
+  <view class="proto-note">完整 78 张塔罗 · 原型演示，AI 解读为占位文本</view>
+</view>
+
+<!-- 抽牌 -->
+<view class="screen" wx:if="{{phase === 'shuffling' || phase === 'picking'}}">
+  <view class="draw-head">
+    <view class="draw-question">「{{question}}」</view>
+    <view class="draw-hint">{{phase === 'shuffling' ? '正在洗牌，请默想你的问题…' : '左右滑动浏览牌堆，凭直觉选择 3 张牌（再点一次可取消）'}}</view>
+  </view>
+
+  <view class="pick-progress">
+    <text class="pick-num">{{pickedCount}}</text><text class="pick-total"> / 3</text>
+  </view>
+
+  <view class="tray">
+    <view class="tray-slot {{pickedCount > 0 ? 'is-filled' : ''}}"><text class="tray-num">1</text></view>
+    <view class="tray-slot {{pickedCount > 1 ? 'is-filled' : ''}}"><text class="tray-num">2</text></view>
+    <view class="tray-slot {{pickedCount > 2 ? 'is-filled' : ''}}"><text class="tray-num">3</text></view>
+  </view>
+
+  <view class="river-mount">
+    <scroll-view class="river" scroll-x enable-flex enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{river}}"
+        wx:key="idx"
+        class="mini-card {{item.picked ? 'is-picked' : ''}}"
+        data-idx="{{item.idx}}"
+        bindtap="onCardTap"
+        style="animation-delay:{{item.delay}}ms"
+      >
+        <view class="mini-back"><text class="back-emblem">☾</text></view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <button class="btn-primary btn-confirm" bindtap="onConfirm" hidden="{{!canConfirm}}">揭晓牌面</button>
+</view>
+
+<!-- 揭示与解读 -->
+<view class="screen" wx:if="{{phase === 'revealing'}}">
+  <view class="reveal-head">
+    <view class="draw-question">「{{question}}」</view>
+  </view>
+
+  <view class="slots">
+    <view
+      wx:for="{{picks}}"
+      wx:key="label"
+      class="slot {{flipped[index] ? 'is-flipped' : ''}}"
+      data-pos="{{index}}"
+      bindtap="onSlotTap"
+    >
+      <text class="slot-label">{{item.label}}</text>
+      <view class="slot-card">
+        <view class="card3d">
+          <view class="card-face card-back"><text class="back-emblem big">☾</text></view>
+          <view class="card-face card-front {{item.reversed ? 'reversed' : ''}} {{item.imgError ? 'img-error' : ''}}">
+            <image
+              wx:if="{{flipped[index]}}"
+              class="card-img"
+              src="{{item.imgUrl}}"
+              mode="aspectFill"
+              data-pos="{{index}}"
+              binderror="onImgError"
+            />
+            <text wx:if="{{item.imgError}}" class="img-error-text">牌面缺失</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="reveal-actions">
+    <button class="btn-primary btn-small" bindtap="onAi" hidden="{{!canRead}}">✦ AI 深层解读</button>
+  </view>
+
+  <view class="reading" wx:if="{{readingStatus}}">
+    <view class="reading-tag">✦ 命运之流 ✦</view>
+    <view class="reading-line" wx:for="{{readingParagraphs}}" wx:for-item="line" wx:key="index">{{line || ' '}}</view>
+    <button wx:if="{{readingStatus === 'error'}}" class="btn-ghost btn-retry" bindtap="onRetry">解读连结中断，点此重试</button>
+    <button wx:if="{{readingStatus === 'ready' || readingStatus === 'error'}}" class="btn-ghost" bindtap="onAgain">重新占一次</button>
+  </view>
+</view>
