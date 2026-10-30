@@ -114,3 +114,133 @@ test('预设问题为旧原型的 4 个方向', () => {
     '我现在最需要觉察的内在课题？',
   ]);
 });
+
+/* ============ Task 5: 会话状态机 ============ */
+
+import { createSession } from '../packages/core/src/session.js';
+
+test('快乐路径：idle→shuffling→picking→revealing', () => {
+  const s = createSession({ rng: seededRng(2026) });
+  s.setQuestion('我该接受这份新工作吗？');
+  assert.equal(s.start(), true);
+  assert.equal(s.getState().phase, 'shuffling');
+  assert.equal(s.getState().river.length, 78);
+  s.finishShuffle();
+  assert.equal(s.getState().phase, 'picking');
+  assert.equal(s.pick(3), true);
+  assert.equal(s.pick(50), true);
+  assert.equal(s.pick(70), true);
+  assert.equal(s.confirmPicks(), true);
+  assert.equal(s.getState().phase, 'revealing');
+  assert.deepEqual(s.getState().flipped, [false, false, false]);
+  assert.equal(s.flip(0), true);
+  assert.deepEqual(s.getState().flipped, [true, false, false]);
+});
+
+test('空问题不能开始，状态不变', () => {
+  const s = createSession({ rng: seededRng(1) });
+  assert.equal(s.start(), false);
+  assert.equal(s.getState().phase, 'idle');
+  s.setQuestion('   ');
+  assert.equal(s.start(), false);
+  assert.equal(s.getState().phase, 'idle');
+});
+
+test('抽牌规则：第 4 张拒绝、重复拒绝、取消后可补选且顺序即选择顺序', () => {
+  const s = createSession({ rng: seededRng(2) });
+  s.setQuestion('q');
+  s.start();
+  s.finishShuffle();
+  assert.equal(s.pick(3), true);
+  assert.equal(s.pick(50), true);
+  assert.equal(s.pick(3), false);
+  assert.equal(s.pick(70), true);
+  assert.equal(s.pick(12), false);
+  assert.equal(s.getState().picks.length, 3);
+  assert.equal(s.unpick(3), true);
+  assert.deepEqual(s.getState().picks.map(p => p.riverIndex), [50, 70]);
+  assert.equal(s.unpick(3), false);
+  assert.equal(s.pick(12), true);
+  assert.deepEqual(s.getState().picks.map(p => p.riverIndex), [50, 70, 12]);
+  const st = s.getState();
+  assert.equal(st.picks[0].riverIndex, 50);
+  assert.equal(st.picks[0].card, st.river[50].card);
+  assert.equal(st.picks[0].reversed, st.river[50].reversed);
+});
+
+test('错误时相下的操作返回 false 且不抛错', () => {
+  const idle = createSession({ rng: seededRng(3) });
+  assert.doesNotThrow(() => {
+    assert.equal(idle.pick(0), false);
+    assert.equal(idle.confirmPicks(), false);
+    assert.equal(idle.flip(0), false);
+  });
+  const s = createSession({ rng: seededRng(3) });
+  s.setQuestion('q');
+  s.start();
+  s.finishShuffle();
+  s.pick(0);
+  assert.equal(s.confirmPicks(), false);
+  s.finishShuffle();
+  assert.equal(s.getState().phase, 'picking');
+});
+
+test('翻牌：未到揭示页拒绝，重复翻拒绝', () => {
+  const s = createSession({ rng: seededRng(4) });
+  s.setQuestion('q');
+  s.start();
+  s.finishShuffle();
+  s.pick(1); s.pick(2); s.pick(3);
+  s.confirmPicks();
+  assert.equal(s.flip(1), true);
+  assert.equal(s.flip(1), false);
+  assert.equal(s.flip(5), false);
+});
+
+test('reset 彻底回到初始态，且可以完整重来', () => {
+  const fresh = createSession({ rng: seededRng(5) }).getState();
+  const s = createSession({ rng: seededRng(5) });
+  s.setQuestion('旧问题');
+  s.start();
+  s.finishShuffle();
+  s.pick(1);
+  s.confirmPicks();
+  s.flip(0);
+  s.reset();
+  assert.deepEqual(s.getState(), fresh);
+  s.setQuestion('新问题');
+  assert.equal(s.start(), true);
+  s.finishShuffle();
+  assert.equal(s.pick(0), true);
+});
+
+test('订阅：每次合法变更通知一次，取消后不再通知；收到新对象', () => {
+  const s = createSession({ rng: seededRng(6) });
+  let calls = 0;
+  const seen = [];
+  const off = s.subscribe(state => { calls++; seen.push(state); });
+  s.setQuestion('q');          // 1
+  s.start();                   // 2
+  s.finishShuffle();           // 3
+  s.pick(2);                   // 4
+  s.unpick(2);                 // 5
+  assert.equal(calls, 5);
+  assert.equal(seen[4].phase, 'picking');
+  assert.equal(new Set(seen).size, 5);
+  assert.equal(seen[4], s.getState());
+  off();
+  s.pick(3);
+  assert.equal(calls, 5);
+});
+
+test('start 之后 river 引用在后续变更中保持稳定', () => {
+  const s = createSession({ rng: seededRng(7) });
+  s.setQuestion('q');
+  s.start();
+  const seen = [];
+  s.subscribe(st => seen.push(st));
+  s.finishShuffle();
+  s.pick(1);
+  const river = s.getState().river;
+  assert.ok(seen.every(st => st.river === river));
+});
