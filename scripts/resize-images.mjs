@@ -1,4 +1,4 @@
-// 用 macOS 自带 sips 把 pipeline/output 的 78 张原图压到宽 624 / JPEG q75。
+// 用 macOS 自带 sips 把 pipeline/output 的 78 张原图压到宽 480 / JPEG q65。
 // 用法：node scripts/resize-images.mjs
 import { execFileSync } from 'node:child_process';
 import { readdirSync, mkdirSync, statSync } from 'node:fs';
