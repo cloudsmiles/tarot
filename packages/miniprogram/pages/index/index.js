@@ -7,7 +7,8 @@ function mapRiver(st) {
   return st.river.map((_, i) => ({
     idx: i,
     pickNo: order.get(i) || 0,
-    delay: Math.min(i * 8, 600),
+    pre: '',
+    dealDelay: 0,
   }));
 }
 
@@ -26,6 +27,7 @@ Page({
     picks: [],
     readingStatus: '',
     readingParagraphs: [],
+    dealHidden: false,
   },
 
   onLoad() {
@@ -37,6 +39,7 @@ Page({
     this.riverSent = false;
     this.pickSignature = '';
     this.imgErrors = {};
+    this.lastPhase = 'idle';
     this.unsubscribe = this.session.subscribe(state => this.applyState(state));
     this.applyState(this.session.getState());
   },
@@ -44,9 +47,11 @@ Page({
   onUnload() {
     if (this.unsubscribe) this.unsubscribe();
     if (this.shuffleTimer) clearTimeout(this.shuffleTimer);
+    if (this.dealTimer) clearTimeout(this.dealTimer);
   },
 
   applyState(st) {
+    const enteringPicking = st.phase === 'picking' && this.lastPhase === 'shuffling';
     const patch = {
       phase: st.phase,
       pickedCount: st.picks.length,
@@ -55,6 +60,7 @@ Page({
       flipped: st.flipped.slice(),
       readingStatus: st.readingStatus || '',
     };
+    if (enteringPicking) patch.dealHidden = true;
 
     if (st.phase === 'idle') {
       this.riverSent = false;
@@ -63,6 +69,7 @@ Page({
       patch.river = [];
       patch.picks = [];
       patch.readingParagraphs = [];
+      patch.dealHidden = false;
     }
 
     if ((st.phase === 'shuffling' || st.phase === 'picking') && !this.riverSent && st.river.length) {
@@ -95,7 +102,43 @@ Page({
       }
     }
 
-    this.setData(patch);
+    this.lastPhase = st.phase;
+    this.setData(patch, () => {
+      if (enteringPicking) this.dealCards();
+    });
+  },
+
+  dealCards() {
+    wx.createSelectorQuery()
+      .selectAll('.mini-card')
+      .boundingClientRect()
+      .exec(res => {
+        const rects = res && res[0];
+        if (!this.deckCenter || !rects || !rects.length) {
+          this.setData({ dealHidden: false });
+          return;
+        }
+        const o = this.deckCenter;
+        const picks = this.session.getState().picks;
+        const river = rects.map((r, i) => {
+          const pickNo = picks.findIndex(p => p.riverIndex === i) + 1;
+          return {
+            idx: i,
+            pickNo: pickNo > 0 ? pickNo : 0,
+            dealDelay: Math.min(i * 14, 700),
+            pre: `transform:translate(${Math.round(o.x - (r.left + r.width / 2))}px,${Math.round(o.y - (r.top + r.height / 2))}px) scale(0.55);opacity:0;`,
+          };
+        });
+        this.setData({ river, dealHidden: true }, () => {
+          if (this.dealTimer) clearTimeout(this.dealTimer);
+          this.dealTimer = setTimeout(() => {
+            this.setData({
+              dealHidden: false,
+              river: this.data.river.map(c => ({ ...c, pre: '', dealDelay: 0 })),
+            });
+          }, 40);
+        });
+      });
   },
 
   onPreset(e) {
@@ -113,7 +156,17 @@ Page({
     this.session.setQuestion(q);
     this.session.start();
     if (this.shuffleTimer) clearTimeout(this.shuffleTimer);
+    if (this.dealTimer) clearTimeout(this.dealTimer);
     this.shuffleTimer = setTimeout(() => this.session.finishShuffle(), 1200);
+    setTimeout(() => {
+      wx.createSelectorQuery()
+        .select('.shuffle-deck')
+        .boundingClientRect()
+        .exec(res => {
+          const r = res && res[0];
+          if (r) this.deckCenter = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+    }, 80);
   },
 
   onCardTap(e) {
@@ -154,6 +207,7 @@ Page({
 
   onAgain() {
     if (this.shuffleTimer) clearTimeout(this.shuffleTimer);
+    if (this.dealTimer) clearTimeout(this.dealTimer);
     this.setData({ question: '' });
     this.session.reset();
   },

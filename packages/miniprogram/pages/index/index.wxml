@@ -68,7 +68,7 @@
       <view class="tray-slot {{pickedCount > 2 ? 'is-filled' : ''}}"><text class="tray-num">3</text></view>
     </view>
 
-    <view class="river-mount">
+    <view class="river-mount {{dealHidden ? 'is-deal-hidden' : ''}}">
       <scroll-view class="river" scroll-x enable-flex enhanced show-scrollbar="{{false}}">
         <view
           wx:for="{{river}}"
@@ -76,7 +76,7 @@
           class="mini-card {{item.pickNo ? 'is-picked' : ''}}"
           data-idx="{{item.idx}}"
           bindtap="onCardTap"
-          style="animation-delay:{{item.delay}}ms"
+          style="transition-delay:{{item.dealDelay}}ms;{{item.pre}}"
         >
           <view class="mini-back"><text class="back-emblem">☾</text></view>
           <text wx:if="{{item.pickNo}}" class="pick-badge">{{item.pickNo}}</text>

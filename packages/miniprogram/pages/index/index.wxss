@@ -95,11 +95,11 @@ button.btn-primary[disabled] {
 .draw-question { font-size: 32rpx; color: #d8b25c; }
 .draw-hint { font-size: 25rpx; color: #b6aecb; margin-top: 16rpx; min-height: 36rpx; }
 
-.pick-progress { text-align: center; margin: 20rpx 0 8rpx; }
+.pick-progress { text-align: center; margin: 20rpx 0 8rpx; animation: dealIn 0.4s ease 0.5s both; }
 .pick-num { font-size: 44rpx; color: #d8b25c; font-weight: 700; }
 .pick-total { font-size: 30rpx; color: #b6aecb; }
 
-.tray { display: flex; justify-content: center; gap: 36rpx; margin: 28rpx 0; }
+.tray { display: flex; justify-content: center; gap: 36rpx; margin: 28rpx 0; animation: dealIn 0.4s ease 0.42s both; }
 .tray-slot {
   width: 120rpx;
   height: 204rpx;
@@ -184,9 +184,9 @@ button.btn-primary[disabled] {
   height: 204rpx;
   margin-right: 16rpx;
   vertical-align: top;
-  animation: dealIn 0.45s ease both;
-  transition: transform 0.25s;
+  transition: transform 0.38s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.3s ease;
 }
+.river-mount.is-deal-hidden { opacity: 0; }
 .mini-card:first-child { margin-left: 44rpx; }
 .mini-card:last-child { margin-right: 100rpx; }
 @keyframes dealIn {
