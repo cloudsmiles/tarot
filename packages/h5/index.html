@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>塔罗占卜</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 56'%3E%3Cg fill='none' stroke='%23d8b25c' stroke-width='4' stroke-linejoin='round'%3E%3Cpolygon points='30,5 43.5,28.5 16.5,28.5'/%3E%3Cpolygon points='17,31 3.5,54 30.5,54'/%3E%3Cpolygon points='43,31 29.5,54 56.5,54'/%3E%3C/g%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div class="app">
+
+    <section class="screen is-active" id="screen-ask">
+      <header class="brand">
+        <div class="brand-mark">☾</div>
+        <h1 class="brand-title">静心 · 问卜</h1>
+        <p class="brand-sub">深呼吸，在心中具体地描述你的问题</p>
+      </header>
+
+      <div class="ask-card">
+        <label class="field-label">选择一个方向</label>
+        <div class="chips" id="chips"></div>
+
+        <label class="field-label" style="margin-top:20px">或输入你的问题</label>
+        <textarea id="questionInput" rows="2" maxlength="80" placeholder="例如：我该接受这份新工作吗？"></textarea>
+
+        <div class="spread-info">
+          <span>牌阵：三张牌</span><span class="dot-sep">◆</span><span>过去 · 现在 · 未来</span>
+        </div>
+
+        <button class="btn-primary" id="startBtn" disabled>开始洗牌</button>
+      </div>
+      <p class="proto-note">完整 78 张塔罗 · 原型演示，AI 解读为占位文本</p>
+    </section>
+
+    <section class="screen" id="screen-draw">
+      <div class="draw-head">
+        <p class="draw-question" id="drawQuestion"></p>
+        <p class="draw-hint" id="drawHint">凝神默想你的问题…</p>
+      </div>
+
+      <div class="pick-progress"><span id="pickCount">0</span><span class="pick-total"> / 3</span></div>
+
+      <div class="tray" id="tray">
+        <div class="tray-slot" data-i="0"><span class="tray-num">1</span></div>
+        <div class="tray-slot" data-i="1"><span class="tray-num">2</span></div>
+        <div class="tray-slot" data-i="2"><span class="tray-num">3</span></div>
+      </div>
+
+      <div class="river-mount">
+        <div class="river" id="river"></div>
+      </div>
+
+      <button class="btn-primary" id="confirmBtn" hidden>揭晓牌面</button>
+    </section>
+
+    <section class="screen" id="screen-reveal">
+      <div class="reveal-head">
+        <p class="draw-question" id="revealQuestion"></p>
+      </div>
+      <div class="slots" id="slots">
+        <div class="slot" data-pos="0"><span class="slot-label">过去</span></div>
+        <div class="slot" data-pos="1"><span class="slot-label">现在</span></div>
+        <div class="slot" data-pos="2"><span class="slot-label">未来</span></div>
+      </div>
+
+      <div class="reveal-actions">
+        <button class="btn-primary btn-small" id="aiBtn" hidden>✦ AI 深层解读</button>
+      </div>
+
+      <div class="reading" id="reading" hidden>
+        <div class="reading-tag">✦ 命运之流 ✦</div>
+        <p id="readingText"></p>
+        <button class="btn-ghost" id="retryBtn" hidden>解读连结中断，点此重试</button>
+        <button class="btn-ghost" id="againBtn">重新占一次</button>
+      </div>
+    </section>
+
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
