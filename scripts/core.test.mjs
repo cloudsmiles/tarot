@@ -65,3 +65,52 @@ test('每张牌带 pipeline 画面元数据 meta', () => {
     assert.ok(c.en.length > 0);
   }
 });
+
+/* ============ Task 4: 洗牌 / 牌阵 / 文案 ============ */
+
+import { shuffleDeck } from '../packages/core/src/deck.js';
+import { THREE_CARD_SPREAD } from '../packages/core/src/spread.js';
+import { PRESET_QUESTIONS } from '../packages/core/src/content.js';
+
+function seededRng(seed) {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+test('确定性 rng 下洗牌可复现：同种子同结果（含正逆位），异种子不同', () => {
+  const a = shuffleDeck(CARDS, seededRng(12345));
+  const b = shuffleDeck(CARDS, seededRng(12345));
+  const c = shuffleDeck(CARDS, seededRng(999));
+  assert.deepEqual(
+    a.map(x => [x.card.id, x.reversed]),
+    b.map(x => [x.card.id, x.reversed]),
+  );
+  const sameAsOther = a.every((x, i) => x.card.id === c[i].card.id && x.reversed === c[i].reversed);
+  assert.equal(sameAsOther, false);
+});
+
+test('洗牌结果 78 张不重复，reversed 均为布尔值', () => {
+  const r = shuffleDeck(CARDS, seededRng(7));
+  assert.equal(r.length, 78);
+  assert.equal(new Set(r.map(x => x.card.id)).size, 78);
+  assert.ok(r.every(x => typeof x.reversed === 'boolean'));
+});
+
+test('三牌阵常量：3 个位置 过去/现在/未来', () => {
+  assert.equal(THREE_CARD_SPREAD.count, 3);
+  assert.deepEqual(THREE_CARD_SPREAD.labels, ['过去', '现在', '未来']);
+  assert.equal(THREE_CARD_SPREAD.id, 'past-present-future');
+});
+
+test('预设问题为旧原型的 4 个方向', () => {
+  assert.deepEqual(PRESET_QUESTIONS, [
+    '我们最近的感情关系走向如何？',
+    '目前手上的工作／项目发展如何？',
+    '近期财务状况需要注意什么？',
+    '我现在最需要觉察的内在课题？',
+  ]);
+});
