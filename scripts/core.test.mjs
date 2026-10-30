@@ -351,3 +351,31 @@ test('请求期间状态为 loading', async () => {
   await promise;
   assert.equal(s.getState().readingStatus, 'ready');
 });
+
+test('loading 中 reset：provider 迟到的 ready 不得写入新会话', async () => {
+  const s = flippedSession(42);
+  let release;
+  const wait = () => new Promise(resolve => { release = resolve; });
+  const promise = s.requestReading(createLocalReadingProvider({ wait, delay: 99 }));
+  s.reset();
+  assert.equal(s.getState().phase, 'idle');
+  assert.equal(s.getState().readingStatus, null);
+  release();
+  await promise;
+  assert.equal(s.getState().phase, 'idle');
+  assert.equal(s.getState().readingStatus, null);
+  assert.equal(s.getState().readingText, '');
+});
+
+test('loading 中 reset：provider 迟到的 error 不得写入新会话', async () => {
+  const s = flippedSession(42);
+  let rejectWait;
+  const wait = () => new Promise((_, reject) => { rejectWait = reject; });
+  const promise = s.requestReading(createLocalReadingProvider({ wait, delay: 99 }));
+  s.reset();
+  rejectWait(new Error('late'));
+  await promise;
+  assert.equal(s.getState().phase, 'idle');
+  assert.equal(s.getState().readingStatus, null);
+  assert.equal(s.getState().readingText, '');
+});

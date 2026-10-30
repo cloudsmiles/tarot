@@ -94,8 +94,11 @@ export function createSession(options = {}) {
           spread,
           picks: state.picks,
         });
+        // await 期间会话可能已被 reset（或同一解读被重复请求）；迟到结果不得写入
+        if (state.phase !== 'revealing' || state.readingStatus !== 'loading') return;
         set({ readingStatus: 'ready', readingText: text });
       } catch {
+        if (state.phase !== 'revealing' || state.readingStatus !== 'loading') return;
         set({ readingStatus: 'error', readingText: '' });
       }
     },

@@ -1660,8 +1660,10 @@ function createSession(options = {}) {
           spread,
           picks: state.picks
         });
+        if (state.phase !== "revealing" || state.readingStatus !== "loading") return;
         set({ readingStatus: "ready", readingText: text });
       } catch {
+        if (state.phase !== "revealing" || state.readingStatus !== "loading") return;
         set({ readingStatus: "error", readingText: "" });
       }
     },
