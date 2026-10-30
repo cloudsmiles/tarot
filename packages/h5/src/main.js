@@ -1,4 +1,4 @@
-import { PRESET_QUESTIONS, createSession, createLocalReadingProvider } from '@tarot/core';
+import { PRESET_QUESTIONS, THREE_CARD_SPREAD, createSession, createLocalReadingProvider } from '@tarot/core';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -54,12 +54,12 @@ $('#questionInput').addEventListener('input', e => {
 $('#startBtn').addEventListener('click', () => {
   session.setQuestion(question);
   session.start();
-  buildRiver();
+  riverEl.innerHTML = '';
   revealBuilt = false;
   $('#drawQuestion').textContent = `「${question}」`;
   $('#revealQuestion').textContent = `「${question}」`;
   clearTimeout(shuffleTimer);
-  shuffleTimer = setTimeout(() => session.finishShuffle(), 800);
+  shuffleTimer = setTimeout(() => session.finishShuffle(), 1200);
 });
 
 /* ---------- 牌河 ---------- */
@@ -100,7 +100,31 @@ $('#confirmBtn').addEventListener('click', () => {
 $('#slots').addEventListener('click', e => {
   const slot = e.target.closest('.slot');
   if (!slot) return;
-  session.flip(Number(slot.dataset.pos));
+  const pos = Number(slot.dataset.pos);
+  const st = session.getState();
+  if (st.phase !== 'revealing' || !st.flipped[pos]) {
+    session.flip(pos);
+    return;
+  }
+  if (slot.querySelector('.card-front').classList.contains('img-error')) return;
+  openPreview(st, pos);
+});
+
+const lightbox = $('#lightbox');
+const lightboxImg = $('#lightboxImg');
+
+function openPreview(state, pos) {
+  const pick = state.picks[pos];
+  lightboxImg.src = `/cards/${pick.card.img}`;
+  lightboxImg.classList.toggle('reversed', pick.reversed);
+  $('#lightboxCap').textContent =
+    `${THREE_CARD_SPREAD.labels[pos]} · ${pick.card.cn} · ${pick.reversed ? '逆位' : '正位'}`;
+  lightbox.hidden = false;
+}
+
+lightbox.addEventListener('click', () => {
+  lightbox.hidden = true;
+  lightboxImg.src = '';
 });
 
 $('#aiBtn').addEventListener('click', () => session.requestReading(provider));
@@ -111,6 +135,9 @@ $('#againBtn').addEventListener('click', () => {
   question = '';
   $('#questionInput').value = '';
   riverEl.innerHTML = '';
+  lightbox.hidden = true;
+  lightboxImg.src = '';
+  lightboxImg.classList.remove('reversed');
   $$('.slot').forEach(slot => {
     slot.querySelectorAll('.slot-card').forEach(n => n.remove());
     slot.classList.remove('is-flipped');
@@ -144,12 +171,16 @@ function render(state) {
   $('#startBtn').disabled = state.phase !== 'idle' || !question.trim();
 
   showScreen(screens[state.phase]);
+  $('#screen-draw').classList.toggle('is-shuffling', state.phase === 'shuffling');
 
   if (state.phase === 'shuffling' || state.phase === 'picking') {
+    if (state.phase === 'picking' && riverEl.children.length === 0) buildRiver();
     $('#pickCount').textContent = String(state.picks.length);
-    const picked = new Set(state.picks.map(p => p.riverIndex));
+    const order = new Map(state.picks.map((p, i) => [p.riverIndex, i + 1]));
     riverEl.querySelectorAll('.mini-card').forEach(el => {
-      el.classList.toggle('is-picked', picked.has(Number(el.dataset.idx)));
+      const pickedOrder = order.get(Number(el.dataset.idx));
+      el.classList.toggle('is-picked', !!pickedOrder);
+      el.dataset.pick = pickedOrder ? String(pickedOrder) : '';
     });
     $$('.tray-slot').forEach((slot, i) => slot.classList.toggle('is-filled', i < state.picks.length));
     $('#confirmBtn').hidden = !(state.phase === 'picking' && state.picks.length === 3);

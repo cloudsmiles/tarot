@@ -139,6 +139,42 @@ textarea::placeholder { color: rgba(182, 174, 203, 0.55); }
 
 /* ---------- 抽牌页 ---------- */
 
+.shuffle-stage {
+  display: none;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+#screen-draw.is-shuffling .shuffle-stage { display: flex; }
+#screen-draw.is-shuffling .pick-progress,
+#screen-draw.is-shuffling .tray,
+#screen-draw.is-shuffling .river-mount { display: none; }
+
+.shuffle-deck { position: relative; width: 96px; height: 164px; }
+.shuffle-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  border: 1px solid var(--gold-soft);
+  background: var(--back-grad);
+  box-shadow: inset 0 0 0 3px rgba(216, 178, 92, 0.18), 0 6px 16px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: shuffleCut 0.7s ease-in-out infinite;
+}
+.shuffle-card .back-emblem { font-size: 28px; }
+.shuffle-card.s1 { --base: -10px; --dx: -52px; --rot: -7deg; z-index: 1; }
+.shuffle-card.s2 { --base: -5px;  --dx:  46px; --rot:  6deg; z-index: 2; animation-delay: 0.09s; }
+.shuffle-card.s3 { --base: 0px;   --dx: -38px; --rot: -5deg; z-index: 3; animation-delay: 0.18s; }
+.shuffle-card.s4 { --base: 5px;   --dx:  50px; --rot:  7deg; z-index: 4; animation-delay: 0.27s; }
+.shuffle-card.s5 { --base: 10px;  --dx: -44px; --rot: -6deg; z-index: 5; animation-delay: 0.36s; }
+@keyframes shuffleCut {
+  0%, 100% { transform: translateX(var(--base)); }
+  35% { transform: translateX(calc(var(--base) + var(--dx))) translateY(-10px) rotate(var(--rot)); }
+  70% { transform: translateX(var(--base)); }
+}
+
 .draw-head { text-align: center; margin: 22px 0 10px; }
 .draw-question { font-size: 16px; color: var(--gold); letter-spacing: 0.04em; }
 .draw-hint { font-size: 12.5px; color: var(--ink-dim); margin-top: 8px; letter-spacing: 0.05em; min-height: 18px; }
@@ -185,6 +221,7 @@ textarea::placeholder { color: rgba(182, 174, 203, 0.55); }
 .river::-webkit-scrollbar { display: none; }
 
 .mini-card {
+  position: relative;
   flex: 0 0 auto;
   width: 60px;
   height: 102px;
@@ -192,7 +229,7 @@ textarea::placeholder { color: rgba(182, 174, 203, 0.55); }
   padding: 0;
   perspective: 600px;
   animation: dealIn 0.45s ease both;
-  transition: opacity 0.3s, transform 0.3s;
+  transition: transform 0.25s;
 }
 @keyframes dealIn {
   from { opacity: 0; transform: translateY(24px) scale(0.9); }
@@ -209,9 +246,31 @@ textarea::placeholder { color: rgba(182, 174, 203, 0.55); }
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: border-color 0.25s, box-shadow 0.25s;
 }
 .mini-card:active .mini-back { box-shadow: inset 0 0 0 3px rgba(216, 178, 92, 0.4); }
-.mini-card.is-picked { opacity: 0.18; transform: scale(0.82); pointer-events: auto; }
+.mini-card.is-picked { transform: translateY(-8px); }
+.mini-card.is-picked .mini-back {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 3px rgba(216, 178, 92, 0.35), 0 0 16px rgba(216, 178, 92, 0.55), 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+.mini-card.is-picked::after {
+  content: attr(data-pick);
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--btn-grad);
+  color: #2a1f04;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
 .back-emblem { color: var(--gold); font-size: 22px; opacity: 0.9; }
 
 #screen-draw .btn-primary { width: auto; margin: 0 auto 6px; padding: 12px 40px; }
@@ -327,3 +386,47 @@ textarea::placeholder { color: rgba(182, 174, 203, 0.55); }
   letter-spacing: 0.1em;
 }
 #retryBtn { color: #e08b8b; border-color: rgba(224, 139, 139, 0.5); margin-top: 10px; }
+
+/* ---------- 牌面大图弹层 ---------- */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(5, 3, 15, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: lightboxIn 0.25s ease both;
+}
+@keyframes lightboxIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.lightbox-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 100%;
+  animation: lightboxZoom 0.28s ease both;
+}
+@keyframes lightboxZoom {
+  from { transform: scale(0.9); }
+  to { transform: scale(1); }
+}
+.lightbox-img {
+  max-width: 86vw;
+  max-height: 74dvh;
+  border-radius: 12px;
+  border: 1px solid var(--gold-soft);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(216, 178, 92, 0.2);
+}
+.lightbox-img.reversed { transform: rotate(180deg); }
+.lightbox-cap {
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  text-align: center;
+}
