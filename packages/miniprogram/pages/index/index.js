@@ -2,6 +2,15 @@ const core = require('../../core/index.js');
 
 const CHIP_LABELS = ['感情关系', '事业发展', '财务状况', '自我觉察'];
 
+function mapRiver(st) {
+  const order = new Map(st.picks.map((p, i) => [p.riverIndex, i + 1]));
+  return st.river.map((_, i) => ({
+    idx: i,
+    pickNo: order.get(i) || 0,
+    delay: Math.min(i * 8, 600),
+  }));
+}
+
 Page({
   data: {
     phase: 'idle',
@@ -58,22 +67,14 @@ Page({
 
     if ((st.phase === 'shuffling' || st.phase === 'picking') && !this.riverSent && st.river.length) {
       this.riverSent = true;
-      patch.river = st.river.map((_, i) => ({
-        idx: i,
-        picked: false,
-        delay: Math.min(i * 8, 600),
-      }));
+      patch.river = mapRiver(st);
     }
 
     if (st.phase === 'shuffling' || st.phase === 'picking') {
       const signature = st.picks.map(p => p.riverIndex).join(',');
       if (signature !== this.pickSignature) {
         this.pickSignature = signature;
-        patch.river = st.river.map((_, i) => ({
-          idx: i,
-          picked: st.picks.some(p => p.riverIndex === i),
-          delay: Math.min(i * 8, 600),
-        }));
+        patch.river = mapRiver(st);
       }
     }
 
@@ -112,7 +113,7 @@ Page({
     this.session.setQuestion(q);
     this.session.start();
     if (this.shuffleTimer) clearTimeout(this.shuffleTimer);
-    this.shuffleTimer = setTimeout(() => this.session.finishShuffle(), 800);
+    this.shuffleTimer = setTimeout(() => this.session.finishShuffle(), 1200);
   },
 
   onCardTap(e) {
@@ -130,7 +131,17 @@ Page({
   },
 
   onSlotTap(e) {
-    this.session.flip(Number(e.currentTarget.dataset.pos));
+    const pos = Number(e.currentTarget.dataset.pos);
+    const st = this.session.getState();
+    if (st.phase !== 'revealing' || !st.flipped[pos]) {
+      this.session.flip(pos);
+      return;
+    }
+    if (this.imgErrors[pos]) return;
+    const urls = st.picks
+      .filter((_, i) => st.flipped[i])
+      .map(p => this.baseUrl + p.card.img);
+    wx.previewImage({ current: this.baseUrl + st.picks[pos].card.img, urls });
   },
 
   onAi() {

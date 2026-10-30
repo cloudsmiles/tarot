@@ -47,30 +47,43 @@
     <view class="draw-hint">{{phase === 'shuffling' ? '正在洗牌，请默想你的问题…' : '左右滑动浏览牌堆，凭直觉选择 3 张牌（再点一次可取消）'}}</view>
   </view>
 
-  <view class="pick-progress">
-    <text class="pick-num">{{pickedCount}}</text><text class="pick-total"> / 3</text>
+  <view class="shuffle-stage" wx:if="{{phase === 'shuffling'}}">
+    <view class="shuffle-deck">
+      <view class="shuffle-card sc1"><text class="back-emblem">☾</text></view>
+      <view class="shuffle-card sc2"><text class="back-emblem">☾</text></view>
+      <view class="shuffle-card sc3"><text class="back-emblem">☾</text></view>
+      <view class="shuffle-card sc4"><text class="back-emblem">☾</text></view>
+      <view class="shuffle-card sc5"><text class="back-emblem">☾</text></view>
+    </view>
   </view>
 
-  <view class="tray">
-    <view class="tray-slot {{pickedCount > 0 ? 'is-filled' : ''}}"><text class="tray-num">1</text></view>
-    <view class="tray-slot {{pickedCount > 1 ? 'is-filled' : ''}}"><text class="tray-num">2</text></view>
-    <view class="tray-slot {{pickedCount > 2 ? 'is-filled' : ''}}"><text class="tray-num">3</text></view>
-  </view>
+  <block wx:if="{{phase === 'picking'}}">
+    <view class="pick-progress">
+      <text class="pick-num">{{pickedCount}}</text><text class="pick-total"> / 3</text>
+    </view>
 
-  <view class="river-mount">
-    <scroll-view class="river" scroll-x enable-flex enhanced show-scrollbar="{{false}}">
-      <view
-        wx:for="{{river}}"
-        wx:key="idx"
-        class="mini-card {{item.picked ? 'is-picked' : ''}}"
-        data-idx="{{item.idx}}"
-        bindtap="onCardTap"
-        style="animation-delay:{{item.delay}}ms"
-      >
-        <view class="mini-back"><text class="back-emblem">☾</text></view>
-      </view>
-    </scroll-view>
-  </view>
+    <view class="tray">
+      <view class="tray-slot {{pickedCount > 0 ? 'is-filled' : ''}}"><text class="tray-num">1</text></view>
+      <view class="tray-slot {{pickedCount > 1 ? 'is-filled' : ''}}"><text class="tray-num">2</text></view>
+      <view class="tray-slot {{pickedCount > 2 ? 'is-filled' : ''}}"><text class="tray-num">3</text></view>
+    </view>
+
+    <view class="river-mount">
+      <scroll-view class="river" scroll-x enable-flex enhanced show-scrollbar="{{false}}">
+        <view
+          wx:for="{{river}}"
+          wx:key="idx"
+          class="mini-card {{item.pickNo ? 'is-picked' : ''}}"
+          data-idx="{{item.idx}}"
+          bindtap="onCardTap"
+          style="animation-delay:{{item.delay}}ms"
+        >
+          <view class="mini-back"><text class="back-emblem">☾</text></view>
+          <text wx:if="{{item.pickNo}}" class="pick-badge">{{item.pickNo}}</text>
+        </view>
+      </scroll-view>
+    </view>
+  </block>
 
   <button class="btn-primary btn-confirm" bindtap="onConfirm" hidden="{{!canConfirm}}">揭晓牌面</button>
 </view>

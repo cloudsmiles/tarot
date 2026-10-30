@@ -118,15 +118,74 @@ button.btn-primary[disabled] {
 }
 .tray-slot.is-filled .tray-num { color: #d8b25c; }
 
+/* 洗牌舞台 */
+.shuffle-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420rpx;
+}
+.shuffle-deck { position: relative; width: 192rpx; height: 328rpx; }
+.shuffle-card {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 16rpx;
+  border: 1rpx solid #caa866;
+  background: radial-gradient(circle at 50% 35%, #2c2360, #120d33);
+  box-shadow: inset 0 0 0 6rpx rgba(216, 178, 92, 0.18), 0 12rpx 32rpx rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation-duration: 0.7s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+.shuffle-card .back-emblem { font-size: 56rpx; }
+.sc1 { z-index: 1; animation-name: shuffleCut1; }
+.sc2 { z-index: 2; animation-name: shuffleCut2; animation-delay: 0.09s; }
+.sc3 { z-index: 3; animation-name: shuffleCut3; animation-delay: 0.18s; }
+.sc4 { z-index: 4; animation-name: shuffleCut4; animation-delay: 0.27s; }
+.sc5 { z-index: 5; animation-name: shuffleCut5; animation-delay: 0.36s; }
+@keyframes shuffleCut1 {
+  0%, 100% { transform: translateX(-20rpx); }
+  35% { transform: translateX(-124rpx) translateY(-20rpx) rotate(-7deg); }
+  70% { transform: translateX(-20rpx); }
+}
+@keyframes shuffleCut2 {
+  0%, 100% { transform: translateX(-10rpx); }
+  35% { transform: translateX(102rpx) translateY(-20rpx) rotate(6deg); }
+  70% { transform: translateX(-10rpx); }
+}
+@keyframes shuffleCut3 {
+  0%, 100% { transform: translateX(0); }
+  35% { transform: translateX(-96rpx) translateY(-20rpx) rotate(-5deg); }
+  70% { transform: translateX(0); }
+}
+@keyframes shuffleCut4 {
+  0%, 100% { transform: translateX(10rpx); }
+  35% { transform: translateX(110rpx) translateY(-20rpx) rotate(7deg); }
+  70% { transform: translateX(10rpx); }
+}
+@keyframes shuffleCut5 {
+  0%, 100% { transform: translateX(20rpx); }
+  35% { transform: translateX(-108rpx) translateY(-20rpx) rotate(-6deg); }
+  70% { transform: translateX(20rpx); }
+}
+
 .river-mount { height: 260rpx; margin: 16rpx -44rpx 28rpx; }
 .river { white-space: nowrap; height: 100%; }
 .mini-card {
+  position: relative;
   display: inline-flex;
   width: 120rpx;
   height: 204rpx;
   margin-right: 16rpx;
   vertical-align: top;
   animation: dealIn 0.45s ease both;
+  transition: transform 0.25s;
 }
 .mini-card:first-child { margin-left: 44rpx; }
 .mini-card:last-child { margin-right: 100rpx; }
@@ -145,7 +204,27 @@ button.btn-primary[disabled] {
   align-items: center;
   justify-content: center;
 }
-.mini-card.is-picked { opacity: 0.18; }
+.mini-card.is-picked { transform: translateY(-16rpx); }
+.mini-card.is-picked .mini-back {
+  border-color: #d8b25c;
+  box-shadow: inset 0 0 0 6rpx rgba(216, 178, 92, 0.35), 0 0 32rpx rgba(216, 178, 92, 0.55), 0 16rpx 32rpx rgba(0, 0, 0, 0.4);
+}
+.pick-badge {
+  position: absolute;
+  top: -14rpx;
+  right: -4rpx;
+  min-width: 40rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  padding: 0 8rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #e8c879, #b78d3a);
+  color: #2a1f04;
+  font-size: 24rpx;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.4);
+}
 .back-emblem { color: #d8b25c; font-size: 44rpx; }
 .back-emblem.big { font-size: 68rpx; }
 
@@ -202,6 +281,7 @@ button.btn-primary[disabled] {
 }
 .card-img { width: 100%; height: 100%; }
 .card-front.reversed .card-img { transform: rotate(180deg); }
+.card-front.img-error .card-img { display: none; }
 .card-front.img-error {
   background: repeating-linear-gradient(45deg, #1b1540 0 16rpx, #141033 16rpx 32rpx);
   display: flex;
