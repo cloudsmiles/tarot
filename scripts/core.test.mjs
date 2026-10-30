@@ -244,3 +244,110 @@ test('start 之后 river 引用在后续变更中保持稳定', () => {
   const river = s.getState().river;
   assert.ok(seen.every(st => st.river === river));
 });
+
+/* ============ Task 6: 本地占位解读 provider 与统一导出 ============ */
+
+import {
+  CARDS as EXPORTED_CARDS,
+  PRESET_QUESTIONS as EXPORTED_QUESTIONS,
+  THREE_CARD_SPREAD as EXPORTED_SPREAD,
+  shuffleDeck as exportedShuffleDeck,
+  createSession as exportedCreateSession,
+  createLocalReadingProvider,
+} from '../packages/core/src/index.js';
+
+test('index.js 统一导出 6 个名字', () => {
+  assert.equal(EXPORTED_CARDS, CARDS);
+  assert.equal(EXPORTED_QUESTIONS, PRESET_QUESTIONS);
+  assert.equal(EXPORTED_SPREAD, THREE_CARD_SPREAD);
+  assert.equal(typeof exportedShuffleDeck, 'function');
+  assert.equal(typeof exportedCreateSession, 'function');
+  assert.equal(typeof createLocalReadingProvider, 'function');
+});
+
+const noWait = () => createLocalReadingProvider({ wait: async () => {}, delay: 0 });
+
+function flippedSession(seed) {
+  const s = createSession({ rng: seededRng(seed) });
+  s.setQuestion('测试问题');
+  s.start();
+  s.finishShuffle();
+  s.pick(0); s.pick(1); s.pick(2);
+  s.confirmPicks();
+  for (let i = 0; i < 3; i++) s.flip(i);
+  return s;
+}
+
+test('占位解读全文格式与逐牌行（正/逆位、文案）逐字正确', async () => {
+  const s = flippedSession(42);
+  await s.requestReading(noWait());
+  const st = s.getState();
+  assert.equal(st.readingStatus, 'ready');
+  const cardLines = st.picks.map(
+    (p, i) => `【${THREE_CARD_SPREAD.labels[i]}｜${p.card.cn}·${p.reversed ? '逆位' : '正位'}】${p.reversed ? p.card.rev : p.card.up}`,
+  );
+  const expected = [
+    '针对你的问题「测试问题」，三张牌诉说着这样的流动：',
+    '',
+    ...cardLines,
+    '',
+    '综合来看，牌面邀请你正视当下的处境，并把觉察化为下一步的具体行动。',
+    '',
+    '（以上为原型占位解读）',
+  ].join('\n');
+  assert.equal(st.readingText, expected);
+});
+
+test('provider 直接调用：第二张逆位时取 rev 文案并标注逆位', async () => {
+  const ctx = {
+    question: 'q',
+    spread: THREE_CARD_SPREAD,
+    picks: [
+      { card: CARDS[0], reversed: false },
+      { card: CARDS[13], reversed: true },
+      { card: CARDS[77], reversed: false },
+    ],
+  };
+  const text = await noWait().generate(ctx);
+  const lines = text.split('\n');
+  assert.equal(lines[2], `【过去｜${CARDS[0].cn}·正位】${CARDS[0].up}`);
+  assert.equal(lines[3], `【现在｜${CARDS[13].cn}·逆位】${CARDS[13].rev}`);
+  assert.equal(lines[4], `【未来｜${CARDS[77].cn}·正位】${CARDS[77].up}`);
+});
+
+test('未全翻时请求不进 loading，全翻后 ready 且文本含问题', async () => {
+  const s = createSession({ rng: seededRng(42) });
+  s.setQuestion('测试问题');
+  s.start();
+  s.finishShuffle();
+  s.pick(0); s.pick(1); s.pick(2);
+  s.confirmPicks();
+  s.flip(0); s.flip(1);
+  await s.requestReading(noWait());
+  assert.equal(s.getState().readingStatus, null);
+  s.flip(2);
+  await s.requestReading(noWait());
+  assert.equal(s.getState().readingStatus, 'ready');
+  assert.ok(s.getState().readingText.includes('测试问题'));
+});
+
+test('provider 抛错置 error、清空文本，重试可恢复 ready', async () => {
+  const s = flippedSession(42);
+  await s.requestReading({ async generate() { throw new Error('boom'); } });
+  assert.equal(s.getState().readingStatus, 'error');
+  assert.equal(s.getState().readingText, '');
+  await s.requestReading(noWait());
+  assert.equal(s.getState().readingStatus, 'ready');
+  assert.ok(s.getState().readingText.includes('占位'));
+});
+
+test('请求期间状态为 loading', async () => {
+  const s = flippedSession(42);
+  let release;
+  const wait = () => new Promise(resolve => { release = resolve; });
+  const promise = s.requestReading(createLocalReadingProvider({ wait, delay: 99 }));
+  assert.equal(s.getState().readingStatus, 'loading');
+  release();
+  await promise;
+  assert.equal(s.getState().readingStatus, 'ready');
+});
