@@ -67,6 +67,8 @@ async function handleReading(req, res) {
       body: JSON.stringify({
         model: ARK_MODEL,
         stream: true,
+        // ark-code-latest 为推理模型，关闭思考过程，首字从 ~40s 降到 ~2s
+        thinking: { type: 'disabled' },
         messages: buildMessages({ question, picks: payload.picks, spread }),
       }),
       signal: controller.signal,
