@@ -21,8 +21,9 @@ tarot/
 > 图片资源分层：完整原图只存本地 `pipeline/output/`（不进 git，新机器需另行拷贝该目录），
 > 前端压缩图由 `build:images` 单向生成；部署只需压缩图，无需原图。
 
-AI 解读目前为**本地占位文本**（`createLocalReadingProvider`），provider 为鸭子类型接口，
-后续可替换为云函数 + 豆包实现，两端代码无需改动。
+AI 解读由 `packages/server`（Node，端口 8787）对接火山方舟，SSE 流式返回；
+provider 为鸭子类型接口，`packages/h5/src/main.js` 的 `AI_ENABLED` 关闭时回退本地模拟文本。
+服务端配置见 `packages/server/config.example.yaml`（真实 `config.yaml` 不进 git）。
 
 ## 环境要求
 
