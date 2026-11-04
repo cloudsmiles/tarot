@@ -157,7 +157,7 @@ export async function buildShareCanvas({ question, spread, picks, readingText })
   y += 18;
 
   const imgs = await Promise.all(
-    picks.map(p => loadImage(`${location.origin}/cards/${p.card.img}?v=20261104`)),
+    picks.map(p => loadImage(`${location.origin}${import.meta.env.BASE_URL}cards/${p.card.img}?v=20261104`)),
   );
 
   picks.forEach((p, i) => {

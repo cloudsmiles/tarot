@@ -4,6 +4,8 @@ import { buildShareCanvas } from './share.js';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
+const BASE = import.meta.env.BASE_URL;
+
 const AI_ENABLED = false;
 
 // 关闭真实 AI 时使用的本地模拟解读：不请求后端，逐段吐出含加粗标记的文本
@@ -37,7 +39,9 @@ function createMockReadingProvider() {
   };
 }
 
-const activeProvider = AI_ENABLED ? createRemoteReadingProvider() : createMockReadingProvider();
+const activeProvider = AI_ENABLED
+  ? createRemoteReadingProvider({ endpoint: `${BASE}api/reading` })
+  : createMockReadingProvider();
 
 const session = createSession();
 
@@ -254,7 +258,7 @@ const lightboxImg = $('#lightboxImg');
 
 function openPreview(state, pos) {
   const pick = state.picks[pos];
-  lightboxImg.src = `/cards/${pick.card.img}?v=20261104`;
+  lightboxImg.src = `${BASE}cards/${pick.card.img}?v=20261104`;
   lightboxImg.classList.toggle('reversed', pick.reversed);
   const spread = getSpread(state.spreadId);
   $('#lightboxCap').textContent =
@@ -299,7 +303,7 @@ let shareLinkPromise = null;
 function ensureShareLink(st) {
   if (shareUrl) return Promise.resolve(shareUrl);
   shareLinkPromise ||= (async () => {
-    const res = await fetch('/api/share', {
+    const res = await fetch(`${BASE}api/share`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -474,7 +478,7 @@ function render(state) {
         slot.classList.add('is-flipped');
         const front = slot.querySelector('.card-front');
         if (pick.reversed) front.classList.add('reversed');
-        front.querySelector('.card-img').src = `/cards/${pick.card.img}?v=20261104`;
+        front.querySelector('.card-img').src = `${BASE}cards/${pick.card.img}?v=20261104`;
       }
     });
 
@@ -510,7 +514,7 @@ async function initShared(id) {
   $('#sharedQuestion').textContent = '';
   $('#sharedReading').hidden = true;
   try {
-    const res = await fetch(`/api/share/${encodeURIComponent(id)}`);
+    const res = await fetch(`${BASE}api/share/${encodeURIComponent(id)}`);
     if (!res.ok) throw new Error();
     const rec = await res.json();
     const spread = getSpread(rec.spreadId);
@@ -531,7 +535,7 @@ async function initShared(id) {
         '<span class="slot-name"></span>';
       slot.querySelector('.slot-label').textContent = spread.labels[pos];
       const img = slot.querySelector('.card-img');
-      img.src = `/cards/${pick.card.img}?v=20261104`;
+      img.src = `${BASE}cards/${pick.card.img}?v=20261104`;
       img.alt = pick.card.cn;
       slot.querySelector('.slot-name').innerHTML =
         `${pick.card.cn}<small>${pick.reversed ? '逆位' : '正位'}</small>`;
@@ -545,7 +549,7 @@ async function initShared(id) {
       if (!slot) return;
       const pos = Number(slot.dataset.pos);
       const pick = picks[pos];
-      lightboxImg.src = `/cards/${pick.card.img}?v=20261104`;
+      lightboxImg.src = `${BASE}cards/${pick.card.img}?v=20261104`;
       lightboxImg.classList.toggle('reversed', pick.reversed);
       $('#lightboxCap').textContent =
         `${spread.labels[pos]} · ${pick.card.cn} · ${pick.reversed ? '逆位' : '正位'}`;
