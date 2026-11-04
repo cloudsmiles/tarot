@@ -18,19 +18,18 @@
       </header>
 
       <div class="ask-card">
-        <label class="field-label">选择一个方向</label>
+        <label class="field-label">选择牌阵</label>
+        <div class="spread-options" id="spreadOptions"></div>
+
+        <label class="field-label" style="margin-top:20px">选择一个方向</label>
         <div class="chips" id="chips"></div>
 
         <label class="field-label" style="margin-top:20px">或输入你的问题</label>
         <textarea id="questionInput" rows="2" maxlength="80" placeholder="例如：我该接受这份新工作吗？"></textarea>
 
-        <div class="spread-info">
-          <span>牌阵：三张牌</span><span class="dot-sep">◆</span><span>过去 · 现在 · 未来</span>
-        </div>
-
-        <button class="btn-primary" id="startBtn" disabled>开始洗牌</button>
+        <button class="btn-primary" id="startBtn" style="margin-top:20px" disabled>开始洗牌</button>
       </div>
-      <p class="proto-note">完整 78 张塔罗 · 原型演示，AI 解读为占位文本</p>
+      <p class="proto-note">完整 78 张塔罗 · AI 解读由大模型生成，仅供自我觉察参考</p>
     </section>
 
     <section class="screen" id="screen-draw">
@@ -41,11 +40,11 @@
 
       <div class="shuffle-stage" id="shuffleStage" aria-hidden="true">
         <div class="shuffle-deck">
-          <span class="shuffle-card s1"><span class="back-emblem">☾</span></span>
-          <span class="shuffle-card s2"><span class="back-emblem">☾</span></span>
-          <span class="shuffle-card s3"><span class="back-emblem">☾</span></span>
-          <span class="shuffle-card s4"><span class="back-emblem">☾</span></span>
-          <span class="shuffle-card s5"><span class="back-emblem">☾</span></span>
+          <span class="shuffle-card s1"></span>
+          <span class="shuffle-card s2"></span>
+          <span class="shuffle-card s3"></span>
+          <span class="shuffle-card s4"></span>
+          <span class="shuffle-card s5"></span>
         </div>
       </div>
 
@@ -64,14 +63,37 @@
       <button class="btn-primary" id="confirmBtn" hidden>揭晓牌面</button>
     </section>
 
+    <section class="screen" id="screen-shared">
+      <header class="brand">
+        <div class="brand-mark">☾</div>
+        <h1 class="brand-title">一次塔罗占卜</h1>
+        <p class="brand-sub">有人为你占了这一局，静静读完牌想说的话</p>
+      </header>
+
+      <div class="ask-card shared-head">
+        <div class="reading-tag" id="sharedSpread"></div>
+        <p class="shared-question" id="sharedQuestion"></p>
+      </div>
+
+      <div class="slots shared-slots" id="sharedSlots"></div>
+
+      <div class="reading" id="sharedReading">
+        <div class="reading-tag">✦ 命运之流 ✦</div>
+        <p class="shared-text" id="sharedText"></p>
+      </div>
+
+      <button class="btn-primary btn-small shared-cta" id="sharedCta">✦ 我也来占一次</button>
+      <p class="proto-note">AI 解读由大模型生成，仅供自我觉察参考</p>
+    </section>
+
     <section class="screen" id="screen-reveal">
       <div class="reveal-head">
         <p class="draw-question" id="revealQuestion"></p>
       </div>
       <div class="slots" id="slots">
-        <div class="slot" data-pos="0"><span class="slot-label">过去</span></div>
-        <div class="slot" data-pos="1"><span class="slot-label">现在</span></div>
-        <div class="slot" data-pos="2"><span class="slot-label">未来</span></div>
+        <div class="slot" data-pos="0"><span class="slot-label"></span><span class="slot-name"></span></div>
+        <div class="slot" data-pos="1"><span class="slot-label"></span><span class="slot-name"></span></div>
+        <div class="slot" data-pos="2"><span class="slot-label"></span><span class="slot-name"></span></div>
       </div>
 
       <div class="reveal-actions">
@@ -81,6 +103,7 @@
       <div class="reading" id="reading" hidden>
         <div class="reading-tag">✦ 命运之流 ✦</div>
         <p id="readingText"></p>
+        <button class="btn-primary btn-small share-btn" id="shareBtn" hidden>✦ 分享结果</button>
         <button class="btn-ghost" id="retryBtn" hidden>解读连结中断，点此重试</button>
         <button class="btn-ghost" id="againBtn">重新占一次</button>
       </div>
@@ -93,6 +116,20 @@
       <img class="lightbox-img" id="lightboxImg" alt="">
       <figcaption class="lightbox-cap" id="lightboxCap"></figcaption>
     </figure>
+  </div>
+
+  <div class="lightbox" id="shareOverlay" hidden>
+    <div class="share-inner">
+      <p class="share-status" id="shareStatus">正在绘制结果长图…</p>
+      <img class="share-img" id="shareImg" alt="占卜结果长图" hidden>
+      <div class="share-actions" id="shareActions" hidden>
+        <button class="btn-primary btn-small" id="shareSysBtn">✦ 分享链接给朋友</button>
+        <button class="btn-ghost" id="shareLinkBtn">复制链接</button>
+        <button class="btn-ghost" id="shareSaveBtn">保存长图</button>
+        <button class="btn-ghost" id="shareCloseBtn">关闭</button>
+      </div>
+      <p class="share-tip" id="shareTip" hidden>手机上也可以长按图片保存到相册</p>
+    </div>
   </div>
 
   <script type="module" src="/src/main.js"></script>

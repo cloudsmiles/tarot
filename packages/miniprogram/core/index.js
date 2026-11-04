@@ -22,9 +22,12 @@ var index_exports = {};
 __export(index_exports, {
   CARDS: () => CARDS,
   PRESET_QUESTIONS: () => PRESET_QUESTIONS,
+  SPREADS: () => SPREADS,
   THREE_CARD_SPREAD: () => THREE_CARD_SPREAD,
   createLocalReadingProvider: () => createLocalReadingProvider,
+  createRemoteReadingProvider: () => createRemoteReadingProvider,
   createSession: () => createSession,
+  getSpread: () => getSpread,
   shuffleDeck: () => shuffleDeck
 });
 module.exports = __toCommonJS(index_exports);
@@ -1558,11 +1561,36 @@ var PRESET_QUESTIONS = [
 ];
 
 // packages/core/src/spread.js
-var THREE_CARD_SPREAD = {
-  id: "past-present-future",
-  count: 3,
-  labels: ["\u8FC7\u53BB", "\u73B0\u5728", "\u672A\u6765"]
-};
+var SPREADS = [
+  {
+    id: "past-present-future",
+    name: "\u65F6\u95F4\u6D41",
+    desc: "\u8FC7\u53BB \xB7 \u73B0\u5728 \xB7 \u672A\u6765",
+    count: 3,
+    labels: ["\u8FC7\u53BB", "\u73B0\u5728", "\u672A\u6765"],
+    guide: "\u4E09\u5F20\u724C\u6309\u65F6\u95F4\u5C55\u5F00\uFF1A\u300C\u8FC7\u53BB\u300D\u770B\u5BFC\u81F4\u73B0\u72B6\u7684\u6210\u56E0\u4E0E\u8FC7\u5F80\u8109\u7EDC\uFF0C\u300C\u73B0\u5728\u300D\u770B\u5F53\u4E0B\u5904\u5883\u4E0E\u6838\u5FC3\u77DB\u76FE\uFF0C\u300C\u672A\u6765\u300D\u770B\u82E5\u6309\u73B0\u72B6\u81EA\u7136\u53D1\u5C55\u7684\u8FD1\u671F\u8D8B\u52BF\u3002\u89E3\u8BFB\u65F6\u8BB2\u6E05\u4E09\u8005\u7684\u56E0\u679C\u6D41\u52A8\u3002"
+  },
+  {
+    id: "mind-body-spirit",
+    name: "\u8EAB\u5FC3\u7075",
+    desc: "\u73B0\u72B6 \xB7 \u5185\u5FC3 \xB7 \u7CBE\u795E",
+    count: 3,
+    labels: ["\u73B0\u72B6", "\u5185\u5FC3", "\u7CBE\u795E"],
+    guide: "\u4E09\u5F20\u724C\u4ECE\u4E09\u4E2A\u5C42\u9762\u7167\u89C1\u6C42\u95EE\u8005\uFF1A\u300C\u73B0\u72B6\u300D\u770B\u5BA2\u89C2\u73B0\u5B9E\u5904\u5883\u4E0E\u6B63\u5728\u53D1\u751F\u7684\u4E8B\uFF0C\u300C\u5185\u5FC3\u300D\u770B\u60C5\u7EEA\u3001\u5173\u7CFB\u52A8\u529B\u4E0E\u771F\u5B9E\u6E34\u6C42\uFF0C\u300C\u7CBE\u795E\u300D\u770B\u66F4\u9AD8\u5C42\u9762\u7684\u529F\u8BFE\u3001\u5929\u8D4B\u4E0E\u9700\u8981\u8046\u542C\u7684\u5185\u5728\u58F0\u97F3\u3002"
+  },
+  {
+    id: "situation-advice-outcome",
+    name: "\u884C\u52A8\u6D41",
+    desc: "\u73B0\u72B6 \xB7 \u5EFA\u8BAE \xB7 \u7ED3\u679C",
+    count: 3,
+    labels: ["\u73B0\u72B6", "\u5EFA\u8BAE", "\u7ED3\u679C"],
+    guide: "\u4E09\u5F20\u724C\u670D\u52A1\u4E8E\u4E00\u4E2A\u5177\u4F53\u51B3\u5B9A\uFF1A\u300C\u73B0\u72B6\u300D\u5BA2\u89C2\u63CF\u8FF0\u5C40\u9762\u4E0E\u53EF\u7528\u8D44\u6E90\uFF0C\u300C\u5EFA\u8BAE\u300D\u7ED9\u51FA\u672C\u5468\u53EF\u4EE5\u91C7\u53D6\u7684\u5177\u4F53\u884C\u52A8\uFF0C\u300C\u7ED3\u679C\u300D\u8BF4\u660E\u82E5\u4F9D\u6B64\u884C\u52A8\u6700\u53EF\u80FD\u8D70\u5411\u7684\u7ED3\u679C\uFF0C\u540C\u65F6\u70B9\u660E\u5176\u4E2D\u7684\u4E0D\u786E\u5B9A\u6027\u3002"
+  }
+];
+var THREE_CARD_SPREAD = SPREADS[0];
+function getSpread(id) {
+  return SPREADS.find((s) => s.id === id) || null;
+}
 
 // packages/core/src/deck.js
 function shuffleDeck(cards, rng = Math.random) {
@@ -1584,16 +1612,18 @@ function initialState(spread) {
   return {
     phase: "idle",
     question: "",
+    spreadId: spread.id,
     river: [],
     picks: [],
     flipped: Array(spread.count).fill(false),
     readingStatus: null,
-    readingText: ""
+    readingText: "",
+    readingStreaming: false
   };
 }
 function createSession(options = {}) {
   const cards = options.cards || CARDS;
-  const spread = options.spread || THREE_CARD_SPREAD;
+  let spread = options.spread || THREE_CARD_SPREAD;
   const rng = options.rng || Math.random;
   const listeners = /* @__PURE__ */ new Set();
   let state = initialState(spread);
@@ -1610,6 +1640,13 @@ function createSession(options = {}) {
     setQuestion(q) {
       if (state.phase !== "idle") return;
       set({ question: String(q ?? "").trim().slice(0, 80) });
+    },
+    setSpread(next) {
+      if (state.phase !== "idle") return false;
+      if (!next || typeof next.id !== "string" || next.count === void 0) return false;
+      spread = next;
+      set({ spreadId: spread.id, flipped: Array(spread.count).fill(false) });
+      return true;
     },
     start() {
       if (state.phase !== "idle" || !state.question) return false;
@@ -1653,18 +1690,25 @@ function createSession(options = {}) {
     async requestReading(provider) {
       if (state.phase !== "revealing") return;
       if (!state.flipped.every(Boolean)) return;
-      set({ readingStatus: "loading", readingText: "" });
+      set({ readingStatus: "loading", readingText: "", readingStreaming: false });
+      const ctx = { question: state.question, spread, picks: state.picks };
+      const stillMine = () => state.phase === "revealing" && state.readingStatus !== null;
       try {
-        const text = await provider.generate({
-          question: state.question,
-          spread,
-          picks: state.picks
-        });
-        if (state.phase !== "revealing" || state.readingStatus !== "loading") return;
-        set({ readingStatus: "ready", readingText: text });
+        let text;
+        if (typeof provider.generateStream === "function") {
+          text = await provider.generateStream(ctx, {
+            onToken: (_delta, full) => {
+              if (stillMine()) set({ readingStatus: "ready", readingText: full, readingStreaming: true });
+            }
+          });
+        } else {
+          text = await provider.generate(ctx);
+        }
+        if (!stillMine()) return;
+        set({ readingStatus: "ready", readingText: text, readingStreaming: false });
       } catch {
-        if (state.phase !== "revealing" || state.readingStatus !== "loading") return;
-        set({ readingStatus: "error", readingText: "" });
+        if (!stillMine()) return;
+        set({ readingStatus: "error", readingText: "", readingStreaming: false });
       }
     },
     reset() {
@@ -1675,6 +1719,55 @@ function createSession(options = {}) {
 }
 
 // packages/core/src/reading.js
+function createRemoteReadingProvider({
+  endpoint = "/api/reading",
+  fetchImpl = typeof fetch !== "undefined" ? fetch : void 0
+} = {}) {
+  return {
+    async generateStream(ctx, { onToken = null } = {}) {
+      if (!fetchImpl) throw new Error("\u5F53\u524D\u73AF\u5883\u4E0D\u652F\u6301 fetch");
+      const res = await fetchImpl(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: ctx.question,
+          spreadId: ctx.spread?.id,
+          picks: ctx.picks.map((p) => ({ cardId: p.card.id, reversed: p.reversed }))
+        })
+      });
+      if (!res.ok || !res.body) throw new Error(`reading HTTP ${res.status}`);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let text = "";
+      for (; ; ) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop();
+        for (const frame of frames) {
+          const line = frame.split("\n").find((l) => l.startsWith("data:"));
+          if (!line) continue;
+          let msg;
+          try {
+            msg = JSON.parse(line.slice(5).trim());
+          } catch {
+            continue;
+          }
+          if (msg.type === "token") {
+            text += msg.text;
+            onToken?.(msg.text, text);
+          } else if (msg.type === "error") {
+            throw new Error(msg.message || "reading failed");
+          }
+        }
+      }
+      if (!text) throw new Error("empty reading");
+      return text;
+    }
+  };
+}
 function createLocalReadingProvider({ wait = null, delay = 1500 } = {}) {
   return {
     async generate(ctx) {

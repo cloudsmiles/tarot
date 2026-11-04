@@ -12,6 +12,7 @@
     "build:core": "node scripts/build-core.mjs",
     "build": "npm run build:data && npm run build:images && npm run build:core",
     "dev:h5": "npm run dev -w packages/h5",
+    "dev:server": "node packages/server/src/server.js",
     "test": "node --test scripts/core.test.mjs"
   },
   "devDependencies": {

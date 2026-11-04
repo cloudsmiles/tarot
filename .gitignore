@@ -1,3 +1,10 @@
 node_modules/
 .DS_Store
 dist/
+packages/server/data/
+.env
+packages/server/config.yaml
+preview/
+pipeline/.raw/
+pipeline/logs/
+pipeline/output/

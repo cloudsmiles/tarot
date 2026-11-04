@@ -6,17 +6,19 @@ function initialState(spread) {
   return {
     phase: 'idle',
     question: '',
+    spreadId: spread.id,
     river: [],
     picks: [],
     flipped: Array(spread.count).fill(false),
     readingStatus: null,
     readingText: '',
+    readingStreaming: false,
   };
 }
 
 export function createSession(options = {}) {
   const cards = options.cards || CARDS;
-  const spread = options.spread || THREE_CARD_SPREAD;
+  let spread = options.spread || THREE_CARD_SPREAD;
   const rng = options.rng || Math.random;
   const listeners = new Set();
   let state = initialState(spread);
@@ -37,6 +39,14 @@ export function createSession(options = {}) {
     setQuestion(q) {
       if (state.phase !== 'idle') return;
       set({ question: String(q ?? '').trim().slice(0, 80) });
+    },
+
+    setSpread(next) {
+      if (state.phase !== 'idle') return false;
+      if (!next || typeof next.id !== 'string' || next.count === undefined) return false;
+      spread = next;
+      set({ spreadId: spread.id, flipped: Array(spread.count).fill(false) });
+      return true;
     },
 
     start() {
@@ -87,19 +97,26 @@ export function createSession(options = {}) {
     async requestReading(provider) {
       if (state.phase !== 'revealing') return;
       if (!state.flipped.every(Boolean)) return;
-      set({ readingStatus: 'loading', readingText: '' });
+      set({ readingStatus: 'loading', readingText: '', readingStreaming: false });
+      const ctx = { question: state.question, spread, picks: state.picks };
+      // await 期间会话可能已被 reset（或同一解读被重复请求）；迟到结果不得写入
+      const stillMine = () => state.phase === 'revealing' && state.readingStatus !== null;
       try {
-        const text = await provider.generate({
-          question: state.question,
-          spread,
-          picks: state.picks,
-        });
-        // await 期间会话可能已被 reset（或同一解读被重复请求）；迟到结果不得写入
-        if (state.phase !== 'revealing' || state.readingStatus !== 'loading') return;
-        set({ readingStatus: 'ready', readingText: text });
+        let text;
+        if (typeof provider.generateStream === 'function') {
+          text = await provider.generateStream(ctx, {
+            onToken: (_delta, full) => {
+              if (stillMine()) set({ readingStatus: 'ready', readingText: full, readingStreaming: true });
+            },
+          });
+        } else {
+          text = await provider.generate(ctx);
+        }
+        if (!stillMine()) return;
+        set({ readingStatus: 'ready', readingText: text, readingStreaming: false });
       } catch {
-        if (state.phase !== 'revealing' || state.readingStatus !== 'loading') return;
-        set({ readingStatus: 'error', readingText: '' });
+        if (!stillMine()) return;
+        set({ readingStatus: 'error', readingText: '', readingStreaming: false });
       }
     },
 

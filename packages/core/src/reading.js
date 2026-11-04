@@ -1,3 +1,50 @@
+export function createRemoteReadingProvider({
+  endpoint = '/api/reading',
+  fetchImpl = typeof fetch !== 'undefined' ? fetch : undefined,
+} = {}) {
+  return {
+    async generateStream(ctx, { onToken = null } = {}) {
+      if (!fetchImpl) throw new Error('当前环境不支持 fetch');
+      const res = await fetchImpl(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: ctx.question,
+          spreadId: ctx.spread?.id,
+          picks: ctx.picks.map(p => ({ cardId: p.card.id, reversed: p.reversed })),
+        }),
+      });
+      if (!res.ok || !res.body) throw new Error(`reading HTTP ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let text = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split('\n\n');
+        buffer = frames.pop();
+        for (const frame of frames) {
+          const line = frame.split('\n').find(l => l.startsWith('data:'));
+          if (!line) continue;
+          let msg;
+          try { msg = JSON.parse(line.slice(5).trim()); } catch { continue; }
+          if (msg.type === 'token') {
+            text += msg.text;
+            onToken?.(msg.text, text);
+          } else if (msg.type === 'error') {
+            throw new Error(msg.message || 'reading failed');
+          }
+        }
+      }
+      if (!text) throw new Error('empty reading');
+      return text;
+    },
+  };
+}
+
 export function createLocalReadingProvider({ wait = null, delay = 1500 } = {}) {
   return {
     async generate(ctx) {

@@ -13,9 +13,13 @@ tarot/
 │   ├── h5/           H5 渲染端：Vite + 原生 JS，开发时直接引用 core 源码
 │   └── miniprogram/  微信原生小程序渲染端：引用 core 的 CJS 打包产物
 ├── scripts/          生成物脚本与核心测试（node:test）
-├── pipeline/output/  图像流水线产出的 78 张原图与元数据（数据源，勿手改）
-└── preview/          旧版原型，仅作视觉参考（只读，勿改）
+└── pipeline/         图像流水线：output/ 留 1664px 完整原图（数据源，勿手改），
+                     meanings.js 为正逆位牌义源，*.json 为生成元数据
 ```
+
+> 根目录 `preview/` 是已退役的静态原型，仅本地视觉参考，已加入 `.gitignore` 不进仓库；
+> 图片资源分层：完整原图只存本地 `pipeline/output/`（不进 git，新机器需另行拷贝该目录），
+> 前端压缩图由 `build:images` 单向生成；部署只需压缩图，无需原图。
 
 AI 解读目前为**本地占位文本**（`createLocalReadingProvider`），provider 为鸭子类型接口，
 后续可替换为云函数 + 豆包实现，两端代码无需改动。
@@ -32,7 +36,7 @@ AI 解读目前为**本地占位文本**（`createLocalReadingProvider`），pro
 npm install        # 安装依赖（workspaces：core + h5）
 npm run build      # 重新生成全部产物：牌数据 + 压缩牌图 + 小程序 CJS bundle（幂等）
 npm run dev:h5     # 启动 H5 dev server：http://localhost:5173
-npm test           # 运行核心测试（node:test，24 个用例）
+npm test           # 运行核心测试（node:test，26 个用例）
 ```
 
 `build` 由三步组成，也可单独运行：`build:data` / `build:images` / `build:core`。
@@ -64,8 +68,8 @@ npm test           # 运行核心测试（node:test，24 个用例）
 
 | 产物 | 生成命令 | 输入 |
 | --- | --- | --- |
-| `packages/core/src/data/cards.js` | `build:data` | `pipeline/output/*.json` + `preview/cards.js`（正逆位牌义） |
-| `packages/h5/public/cards/*.jpg`（78 张，宽 480 / q65，约 7.6MB） | `build:images` | `pipeline/output/*.jpg`（macOS `sips`） |
+| `packages/core/src/data/cards.js` | `build:data` | `pipeline/*.json` + `pipeline/meanings.js`（正逆位牌义） |
+| `packages/h5/public/cards/*.jpg`（78 张正面 + back，宽 624 / q70，约 14MB） | `build:images` | `pipeline/output/*.jpg`（macOS `sips`，原图 1664px 留档于 pipeline） |
 | `packages/miniprogram/core/index.js` | `build:core` | `packages/core/src`（esbuild 打包为 CJS） |
 
 `npm run build` 是幂等的：重建后 `git status` 应无差异。

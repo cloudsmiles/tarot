@@ -1,0 +1,14 @@
+# 服务监听端口
+port: 8787
+
+# 分享记录持久化目录
+# 相对路径相对于 packages/server；VPS 部署建议用仓库外绝对路径，如 /var/lib/tarot/data
+dataDir: ./data
+
+ark:
+  # 火山方舟 API Key（必填）
+  apiKey: ""
+  # Plan/Coding 套餐用 /api/plan/v3，普通套餐用 /api/v3
+  baseUrl: https://ark.cn-beijing.volces.com/api/plan/v3
+  # 模型 ID
+  model: ark-code-latest

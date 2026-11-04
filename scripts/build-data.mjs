@@ -1,4 +1,4 @@
-// 合并 pipeline 元数据与旧 preview/cards.js 的正逆位牌义，生成核心牌数据。
+// 合并 pipeline 元数据与 pipeline/meanings.js 的正逆位牌义，生成核心牌数据。
 // 用法：node scripts/build-data.mjs
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -11,17 +11,17 @@ const outFile = join(root, 'packages/core/src/data/cards.js');
 
 const readJson = p => JSON.parse(readFileSync(p, 'utf8'));
 
-/* 旧牌义来源：preview/cards.js 是浏览器脚本（无模块导出），vm 沙箱执行后取常量 */
-function loadLegacy() {
-  const code = readFileSync(join(root, 'preview/cards.js'), 'utf8');
+/* 牌义来源：pipeline/meanings.js 是无导出的浏览器风格脚本，vm 沙箱执行后取常量 */
+function loadMeanings() {
+  const code = readFileSync(join(pipeline, 'meanings.js'), 'utf8');
   const sandbox = {};
   vm.runInNewContext(`${code}\nthis.__out = { MAJORS, SUITS };`, sandbox, {
-    filename: 'preview/cards.js',
+    filename: 'pipeline/meanings.js',
   });
   return sandbox.__out;
 }
 
-const { MAJORS, SUITS } = loadLegacy();
+const { MAJORS, SUITS } = loadMeanings();
 const legacyMajors = new Map(MAJORS.map(c => [c.file, c]));
 const legacySuits = new Map(SUITS.map(s => [s.code, s]));
 
