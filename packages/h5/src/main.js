@@ -6,7 +6,7 @@ const $$ = s => [...document.querySelectorAll(s)];
 
 const BASE = import.meta.env.BASE_URL;
 
-const AI_ENABLED = false;
+const AI_ENABLED = true;
 
 // 关闭真实 AI 时使用的本地模拟解读：不请求后端，逐段吐出含加粗标记的文本
 function createMockReadingProvider() {
