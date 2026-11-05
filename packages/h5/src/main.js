@@ -300,6 +300,46 @@ let shareBlobUrl = null;
 let shareUrl = null;
 let shareLinkPromise = null;
 
+const isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+const supportSystemShare = typeof navigator.share === 'function';
+
+const toastEl = $('#toast');
+let toastTimer = null;
+function showToast(msg, duration = 2200) {
+  toastEl.textContent = msg;
+  toastEl.classList.remove('is-out');
+  toastEl.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toastEl.classList.add('is-out');
+    setTimeout(() => {
+      toastEl.hidden = true;
+      toastEl.classList.remove('is-out');
+    }, 240);
+  }, duration);
+}
+
+async function copyShareLink(url) {
+  try {
+    await navigator.clipboard.writeText(url);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      if (ok) return true;
+    } catch { /* 继续降级 */ }
+    window.prompt('复制这个链接分享：', url);
+    return false;
+  }
+}
+
 function ensureShareLink(st) {
   if (shareUrl) return Promise.resolve(shareUrl);
   shareLinkPromise ||= (async () => {
@@ -330,7 +370,16 @@ $('#shareBtn').addEventListener('click', async () => {
   shareTip.hidden = true;
   shareStatus.hidden = false;
   shareStatus.textContent = '正在生成分享链接与长图…';
+  const sysShareAvailable = supportSystemShare && isMobileUA;
   const linkTask = ensureShareLink(st).catch(() => null);
+  // PC 或不支持系统分享的手机浏览器（如微信内置）：链接一生成就自动复制
+  linkTask.then(url => {
+    if (!url || sysShareAvailable) return;
+    copyShareLink(url).then(ok => {
+      if (!ok) return;
+      showToast(isMobileUA ? '链接已复制，去微信粘贴给朋友吧 ✓' : '链接已复制，快去粘贴分享吧 ✓');
+    });
+  });
   try {
     const [url, canvas] = await Promise.all([
       linkTask,
@@ -350,7 +399,7 @@ $('#shareBtn').addEventListener('click', async () => {
     shareTip.hidden = false;
     shareStatus.hidden = true;
     const hasLink = !!url;
-    $('#shareSysBtn').hidden = !(hasLink && typeof navigator.share === 'function');
+    $('#shareSysBtn').hidden = !(hasLink && sysShareAvailable);
     $('#shareLinkBtn').hidden = !hasLink;
     shareImg._blob = blob;
   } catch {
@@ -373,24 +422,23 @@ $('#shareSaveBtn').addEventListener('click', () => {
 
 $('#shareSysBtn').addEventListener('click', async () => {
   const st = session.getState();
+  let url = null;
   try {
-    const url = await ensureShareLink(st);
+    url = await ensureShareLink(st);
     await navigator.share({ title: '我的塔罗占卜', text: `「${st.question}」`, url });
-  } catch {
-    // 用户取消或分享失败：静默，保留复制链接与保存图片入口
+  } catch (err) {
+    // 用户取消：静默；其他失败：降级为复制链接
+    if (err?.name !== 'AbortError' && url) {
+      const ok = await copyShareLink(url);
+      if (ok) showToast('链接已复制，去微信粘贴给朋友吧 ✓');
+    }
   }
 });
 
-$('#shareLinkBtn').addEventListener('click', async e => {
-  const btn = e.currentTarget;
-  try {
-    await navigator.clipboard.writeText(shareUrl);
-    const old = btn.textContent;
-    btn.textContent = '链接已复制 ✓';
-    setTimeout(() => { btn.textContent = old; }, 1800);
-  } catch {
-    window.prompt('复制这个链接分享：', shareUrl);
-  }
+$('#shareLinkBtn').addEventListener('click', async () => {
+  if (!shareUrl) return;
+  const ok = await copyShareLink(shareUrl);
+  if (ok) showToast('链接已复制 ✓');
 });
 
 $('#againBtn').addEventListener('click', () => {
